@@ -18,21 +18,25 @@ from utils import get_last_checkpoint_file_name, load_checkpoint, save_checkpoin
 from datasets.data_loader import SSRNDataLoader
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--dataset", required=True, choices=['ljspeech', 'mbspeech'], help='dataset name')
+parser.add_argument("--dataset", required=True, help='dataset name')
 args = parser.parse_args()
-
-if args.dataset == 'ljspeech':
-    from datasets.lj_speech import LJSpeech as SpeechDataset
-else:
-    from datasets.mb_speech import MBSpeech as SpeechDataset
 
 use_gpu = torch.cuda.is_available()
 print('use_gpu', use_gpu)
 if use_gpu:
     torch.backends.cudnn.benchmark = True
 
-train_data_loader = SSRNDataLoader(ssrn_dataset=SpeechDataset(['mags', 'mels']), batch_size=24, mode='train')
-valid_data_loader = SSRNDataLoader(ssrn_dataset=SpeechDataset(['mags', 'mels']), batch_size=24, mode='valid')
+if not args.dataset in ['ljspeech', 'mbspeech']:
+    from datasets.generic import Generic as SpeechDataset
+    train_data_loader = SSRNDataLoader(ssrn_dataset=SpeechDataset(['mags', 'mels'], args.dataset), batch_size=24, mode='train')
+    valid_data_loader = SSRNDataLoader(ssrn_dataset=SpeechDataset(['mags', 'mels'], args.dataset), batch_size=24, mode='valid')    
+else:
+    if args.dataset == 'ljspeech':
+        from datasets.lj_speech import LJSpeech as SpeechDataset
+    else:
+        from datasets.mb_speech import MBSpeech as SpeechDataset
+    train_data_loader = SSRNDataLoader(ssrn_dataset=SpeechDataset(['mags', 'mels']), batch_size=24, mode='train')
+    valid_data_loader = SSRNDataLoader(ssrn_dataset=SpeechDataset(['mags', 'mels']), batch_size=24, mode='valid')
 
 ssrn = SSRN().cuda()
 
