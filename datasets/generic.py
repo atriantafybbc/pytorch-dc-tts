@@ -1,4 +1,4 @@
-"""Data loader for the a generic LJSpeech-style dataset. """
+"""Data loader for a generic LJSpeech-style dataset. """
 from .lj_speech import LJSpeech
 
 class Generic(LJSpeech):
