@@ -1,5 +1,6 @@
 """Data loader for a generic LJSpeech-style dataset. """
 from .lj_speech import LJSpeech
+from .lj_speech import vocab
 
 class Generic(LJSpeech):
     def __init__(self, keys, dir_name):
