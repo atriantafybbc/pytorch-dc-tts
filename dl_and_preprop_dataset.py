@@ -16,6 +16,7 @@ import argparse
 import fnmatch
 import librosa
 import pandas as pd
+import shutil
 
 from hparams import HParams as hp
 from zipfile import ZipFile
@@ -26,8 +27,7 @@ from datasets.lj_speech import LJSpeech
 from datasets.generic import Generic
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--dataset", required=True, choices=['ljspeech', 'mbspeech', 'generic'], help='dataset name')
-parser.add_argument("--generic-path", required=False, help='path of generic dataset')
+parser.add_argument("--dataset", required=True, help='dataset name')
 args = parser.parse_args()
 
 if args.dataset == 'ljspeech':
@@ -53,31 +53,6 @@ if args.dataset == 'ljspeech':
         print("pre processing...")
         lj_speech = LJSpeech([])
         preprocess(dataset_path, lj_speech)
-elif args.dataset == 'generic':
-    if not getattr(args, "generic_path", None):
-        raise Exception("You need to specify --generic-path")
-    dataset_name = os.path.basename(args.generic_path)
-    path_dataset_src = os.path.realpath(args.generic_path)
-    if not os.path.isdir(path_dataset_src):
-        raise Exception("%s does not exist" % path_dataset_src)
-    required_files = [os.path.join(path_dataset_src, f) for f in [
-            "metadata.csv", "wavs"
-    ]]
-    for required_file in required_files:
-        if not os.path.exists(required_file):
-            raise Exception("Required dataset file: %s not found" % required_file)
-
-    path_datasets = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
-    path_dataset_dst = os.path.join(path_datasets, dataset_name)
-
-    if os.path.isdir(path_dataset_dst) and False:
-        print("Pre-processed dataset folder '%s' already exists" % path_dataset_dst)
-        sys.exit(0)
-    else:
-        # pre process
-        print("pre processing...")
-        generic = Generic([], dir_name=dataset_name)
-        preprocess(path_dataset_dst, generic)    
 elif args.dataset == 'mbspeech':
     dataset_name = 'MBSpeech-1.0'
     datasets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
@@ -190,3 +165,38 @@ elif args.dataset == 'mbspeech':
     print("pre processing...")
     mb_speech = MBSpeech([])
     preprocess(dataset_path, mb_speech)
+else:
+    if not args.dataset:
+        print("You must specify a dataset")
+        sys.exit(0)
+
+    dataset_name = args.dataset
+    datasets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
+    dataset_path = os.path.join(datasets_path, dataset_name)
+    if not os.path.isdir(dataset_path):
+        print("%s does not exist" % dataset_path)
+        print("You should put your unprocessed dataset inside %s" % datasets_path)
+        sys.exit(0)
+
+    required_files = [os.path.join(dataset_path, f) for f in [
+            "metadata.csv", "wavs"
+    ]]
+    for required_file in required_files:
+        if not os.path.exists(required_file):
+            raise Exception("Required dataset file: %s not found" % required_file)
+    path_mags = os.path.join(dataset_path, "mags")
+    path_mels = os.path.join(dataset_path, "mels")
+    if os.path.isdir(path_mags) and os.path.isdir(path_mels):
+        print("'%s' dataset has already been pre-processed" % dataset_name)
+        print("If you want to pre-process it again, please remove the "
+              "'mels' and 'mags' subfolders from %s" % dataset_path)
+        sys.exit(0)
+    else:
+        shutil.rmtree(path_mags, ignore_errors=True)
+        shutil.rmtree(path_mels, ignore_errors=True)
+        # pre process
+        print("pre processing...")
+        generic = Generic([], dir_name=dataset_name)
+        preprocess(dataset_path, generic)    
+
+
