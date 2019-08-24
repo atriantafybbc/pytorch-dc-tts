@@ -218,8 +218,8 @@ def train(train_epoch, phase='train'):
                 save_image(A[:1, :, :][0], best_checkpoint_img_filename)
                 with open(best_checkpoint_info_filename, "w", encoding="utf-8") as fout:
                     fout.write("Iteration: %r\n" % global_step)
-                    fout.write("att_loss : %f\n" % att_loss)
-                    fout.write("l1_loss  : %f\n" % l1_loss)
+                    fout.write("att_loss : %.9f\n" % att_loss)
+                    fout.write("l1_loss  : %.9f\n" % l1_loss)
                 print("Best checkpoint written in: %s" % best_checkpoint_filename)
 
 
