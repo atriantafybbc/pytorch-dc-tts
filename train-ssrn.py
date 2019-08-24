@@ -14,11 +14,13 @@ import torch.nn.functional as F
 from models import SSRN
 from hparams import HParams as hp
 from logger import Logger
-from utils import get_last_checkpoint_file_name, load_checkpoint, save_checkpoint
+from utils import get_last_checkpoint_file_name, load_checkpoint, save_checkpoint, warmstart
 from datasets.data_loader import SSRNDataLoader
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--dataset", required=True, help='dataset name')
+parser.add_argument("--warmstart", help='Warmstart (transfer learn) from a pre-trained model')
+
 args = parser.parse_args()
 
 use_gpu = torch.cuda.is_available()
@@ -51,8 +53,13 @@ logger = Logger(args.dataset, 'ssrn')
 # load the last checkpoint if exists
 last_checkpoint_file_name = get_last_checkpoint_file_name(logger.logdir)
 if last_checkpoint_file_name:
-    print("loading the last checkpoint: %s" % last_checkpoint_file_name)
+    print("Found and loading the last checkpoint: %s" % last_checkpoint_file_name)
     start_epoch, global_step = load_checkpoint(last_checkpoint_file_name, ssrn, optimizer)
+    if args.warmstart:
+        print("Ignoring --warmstart because I am resuming from checkpoint")
+elif args.warmstart:
+    print("Warm-starting from: %s" % args.warmstart)
+    warmstart(args.warmstart, ssrn)
 
 
 def get_lr():
