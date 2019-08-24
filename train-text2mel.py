@@ -146,7 +146,13 @@ def train(train_epoch, phase='train'):
             })
             logger.log_step(phase, global_step, {'loss_l1': l1_loss, 'loss_att': att_loss},
                             {'mels-true': S[:1, :, :], 'mels-pred': Y[:1, :, :], 'attention': A[:1, :, :]})
-            if global_step % 5000 == 0:
+            if os.path.exists("save_checkpoint.flag"):
+                save_checkpoint_flag = True
+                os.remove("save_checkpoint.flag")
+            else:
+                save_checkpoint_flag = False
+
+            if global_step % 5000 == 0 or save_checkpoint_flag:
                 # checkpoint at every 5000th step
                 save_checkpoint(logger.logdir, train_epoch, global_step, text2mel, optimizer)
 
