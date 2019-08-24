@@ -20,11 +20,12 @@ from torchvision.utils import save_image
 from models import Text2Mel
 from hparams import HParams as hp
 from logger import Logger
-from utils import get_last_checkpoint_file_name, load_checkpoint, save_checkpoint
+from utils import get_last_checkpoint_file_name, load_checkpoint, save_checkpoint, warmstart
 from datasets.data_loader import Text2MelDataLoader
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--dataset", required=True, help='dataset name')
+parser.add_argument("--warmstart", help='Warmstart (transfer learn) from checkpoint')
 args = parser.parse_args()
 
 use_gpu = torch.cuda.is_available()
@@ -95,9 +96,12 @@ logger = Logger(args.dataset, 'text2mel')
 # load the last checkpoint if exists
 last_checkpoint_file_name = get_last_checkpoint_file_name(logger.logdir)
 if last_checkpoint_file_name:
-    print("loading the last checkpoint: %s" % last_checkpoint_file_name)
+    print("Found and loading the last checkpoint: %s" % last_checkpoint_file_name)
     start_epoch, global_step = load_checkpoint(last_checkpoint_file_name, text2mel, optimizer)
-
+    if args.warmstart:
+        print("Ignoring --warmstart because I am resuming from checkpoint")
+elif args.warmstart:
+    warmstart(args.warmstart, text2mel, optimizer)
 
 def get_lr():
     return optimizer.param_groups[0]['lr']

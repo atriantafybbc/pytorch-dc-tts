@@ -1,5 +1,5 @@
 """Utility methods."""
-__author__ = 'Erdene-Ochir Tuguldur'
+__author__ = 'Erdene-Ochir Tuguldur, Alexandros Triantafyllidis'
 
 import os
 import sys
@@ -19,6 +19,20 @@ def get_last_checkpoint_file_name(logdir):
         return None
     return checkpoints[-1]
 
+def warmstart(model_file_name, model, optimizer):
+    """Loads a pretrained model in order to perform transfer learning"""
+    import pdb
+    pdb.set_trace()
+    checkpoint = torch.load(checkpoint_file_name)
+    model.load_state_dict(checkpoint['state_dict'])
+    model.float()
+    if optimizer is not None:
+        optimizer.load_state_dict(checkpoint['optimizer'])
+    start_epoch = checkpoint.get('epoch', 0)
+    global_step = checkpoint.get('global_step', 0)
+    del checkpoint
+    print("loaded checkpoint epoch=%d step=%d" % (start_epoch, global_step))
+    return start_epoch, global_step
 
 def load_checkpoint(checkpoint_file_name, model, optimizer):
     """Loads the checkpoint into the given model and optimizer."""
