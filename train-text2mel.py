@@ -145,13 +145,22 @@ def train(train_epoch, phase='train'):
                 'l1': "%.05f" % (running_l1_loss / it),
                 'att': "%.05f" % (running_att_loss / it)
             })
-            logger.log_step(phase, global_step, {'loss_l1': l1_loss, 'loss_att': att_loss},
-                            {'mels-true': S[:1, :, :], 'mels-pred': Y[:1, :, :], 'attention': A[:1, :, :]})
+
+
             if os.path.exists("save_checkpoint.flag"):
                 save_checkpoint_flag = True
                 os.remove("save_checkpoint.flag")
             else:
                 save_checkpoint_flag = False
+            if os.path.exists("save_image.flag"):
+                save_image_flag = True
+                os.remove("save_image.flag")
+            else:
+                save_image_flag = False
+
+            logger.log_step(phase, global_step, {'loss_l1': l1_loss, 'loss_att': att_loss},
+                            {'mels-true': S[:1, :, :], 'mels-pred': Y[:1, :, :], 'attention': A[:1, :, :]},
+                            force_image_save=save_image_flag)
 
             if global_step % 5000 == 0 or save_checkpoint_flag:
                 # checkpoint at every 5000th step

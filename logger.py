@@ -16,7 +16,7 @@ class Logger(object):
         self.logdir = os.path.join(hp.logdir, self.project_name)
         self.writer = SummaryWriter(log_dir=self.logdir)
 
-    def log_step(self, phase, step, loss_dict, image_dict):
+    def log_step(self, phase, step, loss_dict, image_dict, force_image_save=False):
         if phase == 'train':
             if step % 50 == 0:
                 # self.writer.add_scalar('lr', get_lr(), step)
@@ -24,7 +24,7 @@ class Logger(object):
                 for key in sorted(loss_dict):
                     self.writer.add_scalar('%s-step/%s' % (phase, key), loss_dict[key], step)
                 self.writer.flush()
-            if step % 1000 == 0:
+            if step % 1000 == 0 or force_image_save:
                 for key in sorted(image_dict):
                     self.writer.add_image('%s/%s' % (self.model_name, key), image_dict[key], step)
                 self.writer.flush()
