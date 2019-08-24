@@ -2,6 +2,7 @@
 """Train the Text2Mel network. See: https://arxiv.org/abs/1710.08969"""
 __author__ = 'Erdene-Ochir Tuguldur, Alexandros Triantafyllidis'
 
+import os
 import sys
 import time
 import argparse
