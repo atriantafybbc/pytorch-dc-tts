@@ -15,7 +15,6 @@ idx2char = {idx: char for idx, char in enumerate(vocab)}
 def text_normalize(text):
     text = ''.join(char for char in unicodedata.normalize('NFD', text)
                    if unicodedata.category(char) != 'Mn')  # Strip accents
-
     text = text.lower()
     text = re.sub("[^{}]".format(vocab), " ", text)
     text = re.sub("[ ]+", " ", text)

@@ -1,10 +1,14 @@
 """These methods are copied from https://github.com/Kyubyong/dc_tts/"""
 
+__author__ = 'Erdene-Ochir Tuguldur, Alexandros Triantafyllidis'
+
 import os
 import copy
 import librosa
 import scipy.io.wavfile
 import numpy as np
+import multiprocessing
+import time
 
 from tqdm import tqdm
 from scipy import signal
@@ -112,6 +116,24 @@ def save_to_wav(mag, filename):
     wav = spectrogram2wav(mag)
     scipy.io.wavfile.write(filename, hp.sr, wav)
 
+def worker_f(tasks, wavs_path, mels_path, mags_path):
+    while True:
+        try:
+            fname = tasks.get(False)
+        except:
+            break
+        mel, mag = get_spectrograms(os.path.join(wavs_path, '%s.wav' % fname))
+
+        t = mel.shape[0]
+        # Marginal padding for reduction shape sync.
+        num_paddings = hp.reduction_rate - (t % hp.reduction_rate) if t % hp.reduction_rate != 0 else 0
+        mel = np.pad(mel, [[0, num_paddings], [0, 0]], mode="constant")
+        mag = np.pad(mag, [[0, num_paddings], [0, 0]], mode="constant")
+        # Reduction
+        mel = mel[::hp.reduction_rate, :]
+        np.save(os.path.join(mels_path, '%s.npy' % fname), mel)
+        np.save(os.path.join(mags_path, '%s.npy' % fname), mag)
+
 
 def preprocess(dataset_path, speech_dataset):
     """Preprocess the given dataset."""
@@ -123,16 +145,23 @@ def preprocess(dataset_path, speech_dataset):
     if not os.path.isdir(mags_path):
         os.mkdir(mags_path)
 
-    for fname in tqdm(speech_dataset.fnames):
-        mel, mag = get_spectrograms(os.path.join(wavs_path, '%s.wav' % fname))
+    num_workers = multiprocessing.cpu_count()
+    tasks = multiprocessing.Queue()
+    num_tasks = len(speech_dataset.fnames)
+    for fname in speech_dataset.fnames:
+        tasks.put(fname)
+    workers = []
+    for i in range(num_workers):
+        workers.append(multiprocessing.Process(target=worker_f, args=(tasks, wavs_path, mels_path, mags_path)))
+        workers[-1].start()
 
-        t = mel.shape[0]
-        # Marginal padding for reduction shape sync.
-        num_paddings = hp.reduction_rate - (t % hp.reduction_rate) if t % hp.reduction_rate != 0 else 0
-        mel = np.pad(mel, [[0, num_paddings], [0, 0]], mode="constant")
-        mag = np.pad(mag, [[0, num_paddings], [0, 0]], mode="constant")
-        # Reduction
-        mel = mel[::hp.reduction_rate, :]
+    old_size = num_tasks
+    with tqdm(total=num_tasks) as pbar:
+        while not tasks.empty():
+            new_size = tasks.qsize()
+            pbar.update(old_size - new_size)
+            old_size = new_size
+            time.sleep(0.1)
 
-        np.save(os.path.join(mels_path, '%s.npy' % fname), mel)
-        np.save(os.path.join(mags_path, '%s.npy' % fname), mag)
+    for worker in workers:
+        worker.join()
