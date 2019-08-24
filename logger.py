@@ -23,11 +23,13 @@ class Logger(object):
                 # self.writer.add_scalar('%s-step/loss' % phase, loss, step)
                 for key in sorted(loss_dict):
                     self.writer.add_scalar('%s-step/%s' % (phase, key), loss_dict[key], step)
-
+                self.writer.flush()
             if step % 1000 == 0:
                 for key in sorted(image_dict):
                     self.writer.add_image('%s/%s' % (self.model_name, key), image_dict[key], step)
+                self.writer.flush()
 
     def log_epoch(self, phase, step, loss_dict):
         for key in sorted(loss_dict):
             self.writer.add_scalar('%s/%s' % (phase, key), loss_dict[key], step)
+        self.writer.flush()
