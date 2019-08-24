@@ -101,6 +101,7 @@ if last_checkpoint_file_name:
     if args.warmstart:
         print("Ignoring --warmstart because I am resuming from checkpoint")
 elif args.warmstart:
+    print("Warm-starting from: %s" % args.warmstart)
     warmstart(args.warmstart, text2mel, optimizer)
 
 def get_lr():

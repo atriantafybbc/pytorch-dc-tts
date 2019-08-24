@@ -23,8 +23,8 @@ def warmstart(model_file_name, model, optimizer):
     """Loads a pretrained model in order to perform transfer learning"""
     import pdb
     pdb.set_trace()
-    checkpoint = torch.load(checkpoint_file_name)
-    model.load_state_dict(checkpoint['state_dict'])
+    pretrained_model = torch.load(model_file_name)
+    model.load_state_dict(pretrained_model.state_dict())
     model.float()
     if optimizer is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
