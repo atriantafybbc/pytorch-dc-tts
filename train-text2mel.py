@@ -48,7 +48,7 @@ else:
     valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
                                            mode='valid')
 
-path_extras = os.path.join(os.path.realpath(__file__), "extras", args.dataset)
+path_extras = os.path.join(os.path.realpath(os.path.dirname(__file__)), "extras", args.dataset)
 try:
     os.path.makedirs(path_extras)
 except:
