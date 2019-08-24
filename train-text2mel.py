@@ -7,6 +7,7 @@ import sys
 import time
 import argparse
 from tqdm import *
+import json
 
 import numpy as np
 
@@ -46,6 +47,33 @@ else:
                                            mode='train')
     valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
                                            mode='valid')
+
+path_extras = os.path.join(os.path.readl(__file__), "extras", args.dataset)
+try:
+    os.path.makedirs(path_extras)
+except:
+    pass
+if not os.path.isdir(path_extras):
+    print("Could not create extras path: %s" % path_extras)
+
+filename_history = os.path.join(path_extras, "history.json")
+history = []
+def read_history():
+    global history
+    h = []
+    if not os.path.exists(filename_history):
+        history = []
+    with open(filename_history, "r", encoding='utf-8') as fin:
+        for line in fin:
+            h.append(json.loads(line.strip()))
+    history = h
+
+def write_history():
+    with open(filename_history, "w", encoding='utf-8') as fout:
+        for history_line in history:
+            fout.write(json.dumps(history_line) + "\n")
+
+
 
 text2mel = Text2Mel(vocab).cuda()
 
@@ -146,7 +174,6 @@ def train(train_epoch, phase='train'):
                 'att': "%.05f" % (running_att_loss / it)
             })
 
-
             if os.path.exists("save_checkpoint.flag"):
                 save_checkpoint_flag = True
                 os.remove("save_checkpoint.flag")
@@ -158,6 +185,10 @@ def train(train_epoch, phase='train'):
             else:
                 save_image_flag = False
 
+            history.append({"att_loss": att_loss, "l1_loss": l1_loss, "step": global_step})
+            write_history()
+            import pdb
+            pdb.set_trace()
             logger.log_step(phase, global_step, {'loss_l1': l1_loss, 'loss_att': att_loss},
                             {'mels-true': S[:1, :, :], 'mels-pred': Y[:1, :, :], 'attention': A[:1, :, :]},
                             force_image_save=save_image_flag)

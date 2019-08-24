@@ -1,5 +1,5 @@
 """Wrapper class for logging into the TensorBoard and comet.ml"""
-__author__ = 'Erdene-Ochir Tuguldur'
+__author__ = 'Erdene-Ochir Tuguldur, Alexandros Triantafyllidis'
 __all__ = ['Logger']
 
 import os
