@@ -49,10 +49,7 @@ else:
                                            mode='valid')
 
 path_extras = os.path.join(os.path.realpath(os.path.dirname(__file__)), "extras", args.dataset)
-try:
-    os.path.makedirs(path_extras)
-except:
-    pass
+os.path.makedirs(path_extras)
 if not os.path.isdir(path_extras):
     print("Could not create extras path: %s" % path_extras)
     sys.exit(0)
