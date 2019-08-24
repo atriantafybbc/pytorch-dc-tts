@@ -4,6 +4,7 @@ __author__ = 'Erdene-Ochir Tuguldur, Alexandros Triantafyllidis'
 
 import os
 import sys
+import shutil
 import time
 import argparse
 from tqdm import *
@@ -13,6 +14,7 @@ import numpy as np
 
 import torch
 import torch.nn.functional as F
+from torchvision.utils import save_image
 
 # project imports
 from models import Text2Mel
@@ -49,10 +51,8 @@ else:
                                            mode='valid')
 
 path_extras = os.path.join(os.path.realpath(os.path.dirname(__file__)), "extras", args.dataset)
-try:
-    os.makedirs(path_extras)
-except:
-    pass
+try: os.makedirs(path_extras)
+except: pass
 if not os.path.isdir(path_extras):
     print("Could not create extras path: %s" % path_extras)
     sys.exit(0)
@@ -70,11 +70,17 @@ def read_history():
     history = h
 
 def write_history():
+    global history
     with open(filename_history, "w", encoding='utf-8') as fout:
         for history_line in history:
             fout.write(json.dumps(history_line) + "\n")
 
-
+def get_best_att_loss():
+    global history
+    best_att_loss = np.inf
+    for entry in history:
+        best_att_loss = min(best_att_loss, entry['att_loss'])
+    return best_att_loss
 
 text2mel = Text2Mel(vocab).cuda()
 
@@ -104,6 +110,7 @@ def lr_decay(step, warmup_steps=4000):
 
 def train(train_epoch, phase='train'):
     global global_step
+    global history
 
     lr_decay(global_step)
     print("epoch %3d with lr=%.02e" % (train_epoch, get_lr()))
@@ -186,17 +193,33 @@ def train(train_epoch, phase='train'):
             else:
                 save_image_flag = False
 
+            if att_loss < get_best_att_loss():
+                print("Found new minimum att_loss: %f at iteration: %r" % (att_loss, global_step))
+                best_checkpoint = True
+            else:
+                best_checkpoint = False                
+
             history.append({"att_loss": att_loss, "l1_loss": l1_loss, "step": global_step})
             write_history()
-            import pdb
-            pdb.set_trace()
+
             logger.log_step(phase, global_step, {'loss_l1': l1_loss, 'loss_att': att_loss},
                             {'mels-true': S[:1, :, :], 'mels-pred': Y[:1, :, :], 'attention': A[:1, :, :]},
-                            force_image_save=save_image_flag)
-
-            if global_step % 5000 == 0 or save_checkpoint_flag:
+                            force_image_save=save_image_flag or best_checkpoint)
+            if global_step % 5000 == 0 or save_checkpoint_flag or best_checkpoint:
                 # checkpoint at every 5000th step
                 save_checkpoint(logger.logdir, train_epoch, global_step, text2mel, optimizer)
+
+            if best_checkpoint:
+                checkpoint_filename = os.path.join(logger.logdir, 'step-%03dK.pth' % (global_step // 1000))
+                best_checkpoint_filename = os.path.join(path_extras, "best_checkpoint.pth")
+                best_checkpoint_img_filename = os.path.join(path_extras, "best_checkpoint.png")
+                best_checkpoint_info_filename = os.path.join(path_extras, "best_checkpoint.info")
+                shutil.copyfile(checkpoint_filename, best_checkpoint_filename)
+                save_image(A[:1, :, :][0], best_checkpoint_img_filename)
+                with open(best_checkpoint_info_filename, "w", encoding="utf-8") as fout:
+                    fout.write("Iteration: %r\n" % global_step)
+                print("Best checkpoint written in: %s" % best_checkpoint_filename)
+
 
     epoch_loss = running_loss / it
     epoch_l1_loss = running_l1_loss / it
