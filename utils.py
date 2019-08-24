@@ -19,20 +19,13 @@ def get_last_checkpoint_file_name(logdir):
         return None
     return checkpoints[-1]
 
-def warmstart(model_file_name, model, optimizer):
+def warmstart(model_file_name, model):
     """Loads a pretrained model in order to perform transfer learning"""
-    import pdb
-    pdb.set_trace()
     pretrained_model = torch.load(model_file_name)
     model.load_state_dict(pretrained_model.state_dict())
     model.float()
-    if optimizer is not None:
-        optimizer.load_state_dict(checkpoint['optimizer'])
-    start_epoch = checkpoint.get('epoch', 0)
-    global_step = checkpoint.get('global_step', 0)
-    del checkpoint
-    print("loaded checkpoint epoch=%d step=%d" % (start_epoch, global_step))
-    return start_epoch, global_step
+    del pretrained_model
+    print("loaded pre-trained model")
 
 def load_checkpoint(checkpoint_file_name, model, optimizer):
     """Loads the checkpoint into the given model and optimizer."""

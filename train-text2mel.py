@@ -25,7 +25,7 @@ from datasets.data_loader import Text2MelDataLoader
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--dataset", required=True, help='dataset name')
-parser.add_argument("--warmstart", help='Warmstart (transfer learn) from checkpoint')
+parser.add_argument("--warmstart", help='Warmstart (transfer learn) from a pre-trained model')
 args = parser.parse_args()
 
 use_gpu = torch.cuda.is_available()
@@ -102,7 +102,7 @@ if last_checkpoint_file_name:
         print("Ignoring --warmstart because I am resuming from checkpoint")
 elif args.warmstart:
     print("Warm-starting from: %s" % args.warmstart)
-    warmstart(args.warmstart, text2mel, optimizer)
+    warmstart(args.warmstart, text2mel)
 
 def get_lr():
     return optimizer.param_groups[0]['lr']
