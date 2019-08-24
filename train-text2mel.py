@@ -55,6 +55,7 @@ except:
     pass
 if not os.path.isdir(path_extras):
     print("Could not create extras path: %s" % path_extras)
+    sys.exit(0)
 
 filename_history = os.path.join(path_extras, "history.json")
 history = []
