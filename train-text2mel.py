@@ -60,6 +60,11 @@ if not os.path.isdir(path_images):
 
 text2mel = Text2Mel(vocab).cuda()
 
+if args.warmstart:
+    old_lr = hp.text2mel_lr 
+    hp.text2mel_lr = hp.text2mel_lr / 100.0
+    print("Reducing learning rate from %.9f to %.9f because of warmstart" % (old_lr, hp.text2mel_lr))
+
 optimizer = torch.optim.Adam(text2mel.parameters(), lr=hp.text2mel_lr)
 
 start_timestamp = int(time.time() * 1000)
@@ -71,10 +76,11 @@ logger = Logger(args.dataset, 'text2mel')
 # load the last checkpoint if exists
 last_checkpoint_file_name = get_last_checkpoint_file_name(logger.logdir)
 if last_checkpoint_file_name:
+    if args.warmstart:
+        print("Cannot warm-start because I found checkpoint in %s" % logger.logdir)
+        sys.exit(1)
     print("Found and loading the last checkpoint: %s" % last_checkpoint_file_name)
     start_epoch, global_step = load_checkpoint(last_checkpoint_file_name, text2mel, optimizer)
-    if args.warmstart:
-        print("Ignoring --warmstart because I am resuming from checkpoint")
 elif args.warmstart:
     print("Warm-starting from: %s" % args.warmstart)
     warmstart(args.warmstart, text2mel)
