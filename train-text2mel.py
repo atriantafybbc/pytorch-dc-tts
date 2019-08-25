@@ -51,13 +51,6 @@ else:
     valid_data_loader = Text2MelDataLoader(text2mel_dataset=SpeechDataset(['texts', 'mels', 'mel_gates']), batch_size=64,
                                            mode='valid')
 
-path_images = os.path.join(os.path.realpath(os.path.dirname(__file__)), "images", args.dataset)
-try: os.makedirs(path_images)
-except: pass
-if not os.path.isdir(path_images):
-    print("Could not create images path: %s" % path_images)
-    sys.exit(0)
-
 text2mel = Text2Mel(vocab).cuda()
 
 if args.warmstart:
@@ -95,8 +88,7 @@ def lr_decay(step, warmup_steps=4000):
 
 def read_flags():
     flags = {
-        'save_checkpoint': False,
-        'save_image': False
+        'save_checkpoint': False
     }
     for flag in flags.keys():
         flag_filename = "%s.flag" % flag
@@ -182,12 +174,12 @@ def train(train_epoch, phase='train'):
 
             logger.log_step(phase, global_step, {'loss_l1': l1_loss, 'loss_att': att_loss},
                             {'mels-true': S[:1, :, :], 'mels-pred': Y[:1, :, :], 'attention': A[:1, :, :]},
-                            force_image_save=flags['save_image'])
+                            force_image_save=flags['save_checkpoint'])
 
             if global_step % 1000 == 0 or flags['save_checkpoint']:
                 # checkpoint at every 1000th step
                 save_checkpoint(logger.logdir, train_epoch, global_step, text2mel, optimizer)
-                checkpoint_img_filename = os.path.join(path_images, "step-%03dK.png" % (global_step // 1000))
+                checkpoint_img_filename = os.path.join(logger.logdir, "step-%03dK.png" % (global_step // 1000))
                 save_image(A[:1, :, :][0], checkpoint_img_filename)
 
     epoch_loss = running_loss / it
