@@ -53,10 +53,12 @@ else:
 
 text2mel = Text2Mel(vocab).cuda()
 
+"""
 if args.warmstart:
     old_lr = hp.text2mel_lr 
     hp.text2mel_lr = hp.text2mel_lr / 10.0
     print("Reducing learning rate from %.9f to %.9f because of warmstart" % (old_lr, hp.text2mel_lr))
+"""
 
 optimizer = torch.optim.Adam(text2mel.parameters(), lr=hp.text2mel_lr)
 
